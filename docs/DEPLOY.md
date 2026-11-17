@@ -93,8 +93,21 @@ git remote add origin https://github.com/MindMachineAi/mma_pc_trolyai.git
 git push -u origin main
 ```
 
+> Repo ở thư mục này **đã được `git init` + gắn remote `origin`** sẵn (2 commit đầu đã có),
+> nên bạn chỉ cần chạy `git push -u origin main`.
+
 > Lần push đầu tiên Git Credential Manager sẽ mở trình duyệt để đăng nhập GitHub
 > (cần quyền ghi vào org `MindMachineAi`).
+>
+> ⚠️ **Đừng để repo nằm trong thư mục Google Drive / OneDrive đang sync.** Drive tạo
+> `desktop.ini` trong *mọi* thư mục, kể cả `.git\refs\heads\`, sinh ra ref hỏng
+> (`warning: ignoring broken ref refs/heads/desktop.ini`). Nếu đã lỡ, xoá file đó:
+> `Remove-Item -LiteralPath '.git\refs\heads\desktop.ini' -Force`
+> — hoặc tốt hơn: clone repo ra `C:\dev\...` rồi làm việc ở đó.
+
+Sau khi push, bật các lớp bảo vệ trên GitHub (Settings → Code security):
+Secret scanning + Push protection, Dependabot alerts, và branch protection cho `main`
+(bắt buộc PR + CI xanh). Thêm repository secret `APP_URL`, `CRON_SECRET` cho workflow cron.
 
 Trước khi push, xác nhận **không có secret** trong staged files:
 
