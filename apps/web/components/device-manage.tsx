@@ -62,6 +62,7 @@ export function DeviceManage({
     setMode(next);
     setError(null);
     setCopied(false);
+    if (next === "rename") setDraftName(name);
     if (next === "reconnect") setToken(null);
   }
 
