@@ -63,8 +63,6 @@ export default async function DashboardPage() {
     };
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -75,7 +73,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-start gap-2">
           <AnalyzeButton />
-          <AddDevice appUrl={appUrl} />
+          <AddDevice />
         </div>
       </header>
 
@@ -104,9 +102,9 @@ export default async function DashboardPage() {
       {devices.length === 0 ? (
         <EmptyState
           title="Chưa có thiết bị nào"
-          description="Bấm “Thêm thiết bị” để tạo token, sau đó chạy install.ps1 trên laptop. Agent sẽ tự gửi dữ liệu mỗi 60 giây."
+          description="Bấm “Thêm thiết bị” để tạo token, rồi tải bộ cài (.cmd) và chạy bằng Run as administrator trên laptop. Agent sẽ tự gửi dữ liệu mỗi 60 giây."
         >
-          <AddDevice appUrl={appUrl} />
+          <AddDevice />
         </EmptyState>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

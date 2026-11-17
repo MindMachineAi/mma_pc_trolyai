@@ -6,16 +6,41 @@
 - Dashboard đã deploy và `/api/health` trả `ok: true`.
 - Bạn đã bấm **Thêm thiết bị** trên dashboard và copy token `pca_…` (chỉ hiện 1 lần).
 
-## 1. Cài nhanh (khuyến nghị)
+## 1. Cài nhanh bằng nút "Tải bộ cài" (khuyến nghị)
 
-1. Tải `agent.exe` + `install.ps1` từ GitHub Release (tag `agent-v*`) vào cùng một thư mục:
+1. Trên dashboard bấm **Thêm thiết bị** → nhập tên → **Tạo thiết bị & lấy token**.
+2. Bấm **Tải bộ cài** → nhận file `cai-dat-pca-<ten-thiet-bi>.cmd` (đã nhúng sẵn API URL + token).
+3. Copy file sang laptop mới → chuột phải → **Run as administrator**.
+   Windows/trình duyệt có thể cảnh báo file `.cmd`: chọn *Giữ lại* / *More info → Run anyway*.
+4. Script tự làm hết: xin quyền UAC → tải `agent.exe`, `install.ps1`, `SHA256SUMS.txt` từ GitHub Release mới nhất
+   → kiểm tra SHA-256 → dừng task cũ (nếu có) → chạy `install.ps1` → xoá thư mục tạm → in
+   `Cai dat thanh cong` → xoá chính file `.cmd`.
+5. Sau ~2 phút, thiết bị chuyển **Đang online** trên dashboard.
+
+Lưu ý:
+
+- File `.cmd` chứa token: chỉ chuyển qua kênh tin cậy, và xoá ngay nếu cài lỗi mà không dùng nữa.
+- Cài lỗi thì file `.cmd` **được giữ lại** để chạy lại; xem thông báo đỏ trong cửa sổ console.
+- Nút tải chỉ sinh file cho thiết bị vừa tạo (token chỉ hiện 1 lần). Thiết bị cũ muốn cài lại phải tạo thiết bị mới
+  hoặc dùng cách thủ công ở mục 2 với token đã lưu.
+
+## 2. Cài thủ công (phương án dự phòng)
+
+1. Tải `agent.exe` + `install.ps1` + `SHA256SUMS.txt` từ GitHub Release (tag `agent-v*`) vào cùng một thư mục:
    <https://github.com/MindMachineAi/mma_pc_trolyai/releases/latest>
 
    Hoặc tải trực tiếp:
    ```powershell
    $base = 'https://github.com/MindMachineAi/mma_pc_trolyai/releases/latest/download'
-   Invoke-WebRequest "$base/agent.exe"   -OutFile .\agent.exe
-   Invoke-WebRequest "$base/install.ps1" -OutFile .\install.ps1
+   Invoke-WebRequest "$base/agent.exe"       -OutFile .\agent.exe
+   Invoke-WebRequest "$base/install.ps1"     -OutFile .\install.ps1
+   Invoke-WebRequest "$base/SHA256SUMS.txt"  -OutFile .\SHA256SUMS.txt
+   ```
+
+   Kiểm tra file tải về (tuỳ chọn nhưng nên làm):
+   ```powershell
+   Get-FileHash .\agent.exe, .\install.ps1 -Algorithm SHA256 | Format-Table Hash, Path
+   Get-Content .\SHA256SUMS.txt
    ```
 
 2. Mở **PowerShell as Administrator** tại thư mục đó:
@@ -32,7 +57,13 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 `
    - đăng ký task `PCtroLyAI-Agent` chạy bằng SYSTEM khi khởi động
 4. Sau ~2 phút, thiết bị chuyển **Đang online** trên dashboard.
 
-## 2. Kiểm tra
+Nếu máy đã cài agent từ trước, dừng task trước khi copy đè (nút **Tải bộ cài** tự làm bước này):
+
+```powershell
+Stop-ScheduledTask -TaskName 'PCtroLyAI-Agent'
+```
+
+## 3. Kiểm tra
 
 ```powershell
 Get-ScheduledTask -TaskName 'PCtroLyAI-Agent' | Get-ScheduledTaskInfo
@@ -49,7 +80,7 @@ Log tốt trông như sau:
 Nếu log báo `401 invalid_token` → token sai hoặc thiết bị đã bị thu hồi.
 Nếu `kết nối thất bại` → kiểm tra firewall/proxy của mạng.
 
-## 3. Chạy thử bằng Python (không cài task)
+## 4. Chạy thử bằng Python (không cài task)
 
 ```powershell
 cd apps\agent
@@ -61,7 +92,7 @@ python main.py --api-url "https://your-app.vercel.app" --token "pca_..." --once
 
 `--once` gửi đúng 1 mẫu rồi thoát — dùng để debug nhanh. Bỏ `--once` để chạy vòng lặp.
 
-## 4. Build lại exe
+## 5. Build lại exe
 
 ```powershell
 cd apps\agent
@@ -73,7 +104,7 @@ pyinstaller --clean --noconfirm build.spec
 Hoặc đẩy tag `agent-v0.1.0` lên GitHub → workflow `Build agent (Windows exe)` tự build và
 đính kèm file vào Release.
 
-## 5. Gỡ cài đặt
+## 6. Gỡ cài đặt
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
@@ -83,7 +114,7 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1 -KeepLogs   # giữ log
 Sau đó vào dashboard → trang thiết bị → **Thu hồi** (gọi `DELETE /api/devices/{id}`) để
 vô hiệu hóa token còn sót.
 
-## 6. Lệnh bảo trì được hỗ trợ
+## 7. Lệnh bảo trì được hỗ trợ
 
 | `type` | Việc agent làm | Quyền |
 | --- | --- | --- |
@@ -98,7 +129,7 @@ vô hiệu hóa token còn sót.
 
 Ngoài 5 lệnh trên, agent **từ chối** mọi `type` khác (kể cả khi server bị xâm nhập).
 
-## 7. Lưu ý vận hành
+## 8. Lưu ý vận hành
 
 - Token lưu trong `C:\ProgramData\PCtroLyAI\agent-config.json`, ACL chỉ SYSTEM + Administrators.
 - Agent không mở port, không nhận kết nối vào — chỉ gọi ra ngoài.
