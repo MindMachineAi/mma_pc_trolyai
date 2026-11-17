@@ -28,7 +28,7 @@ jobs:
         run: pyinstaller --clean --noconfirm build.spec
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: agent-windows-x64
           path: apps/agent/dist/agent.exe
