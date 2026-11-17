@@ -129,21 +129,111 @@ Nếu lỡ commit file `.env` → **đổi toàn bộ key** rồi `git filter-re
 
 ## 6. Deploy Vercel
 
-1. https://vercel.com/new → **Import Git Repository** → chọn repo.
-2. **Root Directory**: `apps/web` (quan trọng — repo là monorepo).
-3. Framework preset: Next.js (tự nhận). Build command đã cấu hình trong `apps/web/vercel.json`.
-4. **Environment Variables** — thêm từng biến (Production + Preview):
+### 6.1. Chuẩn bị trước khi mở Vercel
 
-   `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
-   `DEVICE_REGISTRATION_SECRET`, `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL`,
-   `CRON_SECRET`, `NEXT_PUBLIC_APP_URL` (= domain Vercel, ví dụ `https://pc-troly-ai.vercel.app`)
+| Cần | Lấy ở đâu | Lưu ý |
+| --- | --- | --- |
+| `DATABASE_URL` (pooled) + `DIRECT_URL` (direct) | Neon → **Connection Details** | `DATABASE_URL` phải có `-pooler` trong host; cả hai phải có `?sslmode=require` |
+| `AUTH_SECRET`, `DEVICE_REGISTRATION_SECRET`, `CRON_SECRET` | `pnpm gen:secrets` (mục 2) | `AUTH_SECRET` **≥ 32 ký tự**, ngắn hơn thì `lib/session.ts` ném lỗi ngay khi đăng nhập |
+| `DEEPSEEK_API_KEY` | https://platform.deepseek.com → **API keys** | Thiếu ⇒ cron trả `aiSkipped` (không fail), nút *Phân tích bằng AI* báo lỗi cấu hình |
+| `ADMIN_EMAIL` + `ADMIN_PASSWORD` | Tự đặt | Thiếu ⇒ `/api/health` trả **503** và không đăng nhập được |
 
-5. **Deploy** → mở `https://<app>/api/health` kiểm tra `ok: true`.
-6. Đăng nhập dashboard bằng tài khoản admin vừa cấu hình.
+### 6.2. Import repo
 
-> Prisma trên Vercel: `build` đã chạy `prisma generate`. Không cần `prisma migrate` trên Vercel
-> nếu bạn đã `prisma:push` từ máy dev. Khi có migration thật, chạy `pnpm --filter web prisma:deploy`
-> trong CI hoặc từ máy dev.
+1. https://vercel.com/new → **Import Git Repository** → chọn `MindMachineAi/mma_pc_trolyai`.
+   Repo không hiện ⇒ bấm **Adjust GitHub App Permissions** → cấp quyền cho org `MindMachineAi`.
+2. **Project Name**: `pc-troly-ai` → domain mặc định `pc-troly-ai.vercel.app`.
+3. **Framework Preset**: Next.js (tự nhận từ `apps/web/package.json`).
+4. **Root Directory**: bấm **Edit** → chọn `apps/web`. Để nguyên root repo sẽ báo
+   *"No Next.js version detected"* vì repo là monorepo (`pnpm-workspace.yaml` ở root).
+5. **Build and Output Settings**: để **Inherit** hết — `apps/web/vercel.json` đã khai
+   `buildCommand: prisma generate && next build` và cron `/api/cron/analyze?limit=2` lúc `0 20 * * *`.
+   Vercel tự chạy `pnpm install` ở workspace root (Node 22 nhờ `engines`, pnpm 9.15.0 nhờ
+   `packageManager`). Chỉ cần đổi **Install Command** = `pnpm install --frozen-lockfile` nếu gặp
+   lỗi lockfile.
+
+### 6.3. Khai báo Environment Variables
+
+Đường dẫn: **Project → Settings → Environment Variables → Add New** (Key / Value / Environments).
+Bật **Sensitive** cho mọi giá trị là secret, **trừ** `NEXT_PUBLIC_APP_URL` (cần đọc lại để đối chiếu domain).
+
+| Key | Bắt buộc | Giá trị mẫu | Môi trường | Sensitive |
+| --- | --- | --- | --- | --- |
+| `DATABASE_URL` | ✅ | `postgresql://user:pass@ep-xxx-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require` | Production | ✅ |
+| `DIRECT_URL` | ✅ | `postgresql://user:pass@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require` | Production | ✅ |
+| `AUTH_SECRET` | ✅ | chuỗi base64 ≥ 32 ký tự | Production | ✅ |
+| `ADMIN_EMAIL` | ✅ | `ban@example.com` | Production | ➖ |
+| `ADMIN_PASSWORD` | ✅ | mật khẩu mạnh | Production | ✅ |
+| `DEVICE_REGISTRATION_SECRET` | ➖ | hex 32 byte | Production | ✅ |
+| `DEEPSEEK_API_KEY` | ➖ | `sk-…` | Production | ✅ |
+| `DEEPSEEK_BASE_URL` | ➖ | `https://api.deepseek.com` | Production | ➖ |
+| `DEEPSEEK_MODEL` | ➖ | `deepseek-flash` | Production | ➖ |
+| `CRON_SECRET` | ✅ (nếu dùng cron) | hex 32 byte | Production | ✅ |
+| `NEXT_PUBLIC_APP_URL` | ➖ | `https://pc-troly-ai.vercel.app` | Production | ❌ |
+
+Vì sao cần đúng như vậy:
+
+- `DIRECT_URL` **bắt buộc cả trên Vercel** dù runtime chỉ dùng `DATABASE_URL`: `prisma/schema.prisma`
+  khai `directUrl = env("DIRECT_URL")` nên bước `prisma generate` lúc build cần biến này (CI cũng phải
+  set giá trị giả — xem `.github/workflows/ci.yml`).
+- `CRON_SECRET`: `lib/tokens.ts` nhận `Authorization: Bearer …` **hoặc** `x-cron-secret`. Khi project có
+  biến tên `CRON_SECRET`, Vercel Cron **tự gắn** `Authorization: Bearer <giá trị>` vào request cron.
+- `DEVICE_REGISTRATION_SECRET` chỉ cần khi cấp token bằng script
+  (`curl -H "x-registration-secret: …"`); dashboard dùng session admin nên vẫn thêm được thiết bị nếu thiếu.
+- `NEXT_PUBLIC_APP_URL` được **nhúng vào bundle lúc build** (dùng ở `dashboard/page.tsx` để in hướng dẫn
+  cài agent) ⇒ đổi giá trị phải **Redeploy**, và không bật Sensitive.
+
+**Nhập nhanh không cần gõ tay:** Vercel có ô *Paste the contents*, nhưng **không dán kèm dấu nháy kép**
+(khác `apps/web/.env`, Vercel lưu nguyên `"` thành một phần giá trị → `invalid port`). Xuất bản không nháy
+từ file env của bạn rồi dán:
+
+```powershell
+Get-Content apps\web\.env |
+  Where-Object { $_ -match '^\s*[A-Z_]+=' } |
+  ForEach-Object { $_ -replace '^([A-Z_]+)\s*=\s*"(.*)"\s*$', '$1=$2' } |
+  Set-Clipboard          # Ctrl+V vào ô Environment Variables của Vercel
+```
+
+### 6.4. Deploy và kiểm tra
+
+1. Bấm **Deploy** → log phải có `prisma generate` → `next build` → bảng **Route (app)**.
+2. Mở `https://<app>/api/health`:
+
+   ```json
+   {
+     "ok": true,
+     "database": { "ok": true },
+     "authConfigured": true,
+     "aiConfigured": true,
+     "cronConfigured": true,
+     "aiProvider": "deepseek-flash"
+   }
+   ```
+
+   `ok:false` kèm `databaseError` ⇒ chuỗi Neon sai (kiểm tra `-pooler`); `authConfigured:false` ⇒ thiếu
+   1 trong 3 biến `AUTH_SECRET` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` → thêm rồi **Redeploy**
+   (deployment cũ **không** tự nhận env mới).
+3. Tạo bảng trong DB (Vercel **không** làm bước này): chạy một lần trên máy dev
+
+   ```powershell
+   pnpm --filter web prisma:push
+   ```
+
+4. Đăng nhập `/login` → thêm thiết bị → copy token `pca_…` → cài agent trỏ về domain Vercel
+   (xem `docs/AGENT-INSTALL.md`).
+
+> Prisma trên Vercel: build đã chạy `prisma generate`, nên không cần `prisma migrate` ở đó. Khi có
+> migration thật, chạy `pnpm --filter web prisma:deploy` từ máy dev hoặc trong CI.
+
+### 6.5. Tinh chỉnh sau deploy
+
+| Việc | Đường dẫn trong Vercel | Lý do |
+| --- | --- | --- |
+| Region Functions = **Singapore (sin1)** | Settings → **Functions** → Region | Neon đặt ở Singapore, giảm độ trễ mỗi query |
+| Xác nhận cron đã đăng ký | Project → **Cron Jobs** | Phải thấy `/api/cron/analyze?limit=2` — `0 20 * * *` (Hobby chỉ cho 1 cron/ngày) |
+| Gắn custom domain | Settings → **Domains** | Gắn xong: sửa `NEXT_PUBLIC_APP_URL` → **Redeploy** |
+| Redeploy sau mỗi lần sửa env | Deployments → ⋯ → **Redeploy** | Env không áp dụng ngược cho deployment đã build |
+| Chỉ bật Preview khi có DB riêng | Settings → Environment Variables | Tránh preview deploy ghi vào DB production (dùng Neon branch riêng) |
 
 ## 7. Cron phân tích AI
 
@@ -185,4 +275,8 @@ Thêm secrets: repo → **Settings → Secrets and variables → Actions → New
 | AI trả `aiSkipped` | Thiếu `DEEPSEEK_API_KEY` | Thêm env, redeploy |
 | AI `HTTP 402` | Hết số dư DeepSeek | Nạp tiền hoặc đổi provider |
 | Trang 500 sau deploy | Thiếu `AUTH_SECRET` (<32 ký tự) | Sinh lại bằng `pnpm gen:secrets` |
+| Build báo *"No Next.js version detected"* | Chưa đặt **Root Directory** = `apps/web` | Settings → General → Root Directory → **Redeploy** |
+| Build dừng ở `prisma generate`: *Environment variable not found: DIRECT_URL* | Thiếu `DIRECT_URL` trên Vercel | Thêm biến (mục 6.3) → Redeploy |
+| DB báo *invalid port* / host lạ | Dán giá trị kèm dấu `"` hoặc dùng chuỗi **direct** cho `DATABASE_URL` | Xoá biến, nhập lại không nháy, dùng chuỗi *Pooled* |
+| Trang `/dashboard` 500 ngay sau khi thêm env | Deployment cũ chưa build lại | Deployments → ⋯ → **Redeploy** |
 | Cron 401 | `CRON_SECRET` không khớp | Cập nhật secret ở cả Vercel và GitHub |

@@ -331,7 +331,7 @@ Tóm tắt 5 bước (chi tiết từng bước, kèm ảnh hưởng và lỗi t
 | Bước | Việc cần làm |
 | --- | --- |
 | 1 | Tạo project **Neon** → lấy chuỗi `Pooled` (`DATABASE_URL`) và `Direct` (`DIRECT_URL`) |
-| 2 | Import repo vào **Vercel**, đặt **Root Directory = `apps/web`**, thêm toàn bộ biến ở mục [9](#9-biến-môi-trường) |
+| 2 | Import repo vào **Vercel**, đặt **Root Directory = `apps/web`**, thêm toàn bộ biến ở mục [9](#9-biến-môi-trường) — từng bước khai báo ở [docs/DEPLOY.md §6](docs/DEPLOY.md#6-deploy-vercel) |
 | 3 | Chạy `pnpm db:push` một lần với `apps/web/.env` trỏ vào Neon (hoặc `prisma migrate deploy` nếu dùng migration) |
 | 4 | Kiểm tra `https://<app>/api/health` → `ok: true`; đặt GitHub Actions secrets `APP_URL`, `CRON_SECRET` để bật cron 30 phút |
 | 5 | Bật bảo vệ repo: Secret scanning + Push protection, Dependabot alerts, branch protection `main`, workflow permissions = Read/write |
@@ -340,6 +340,9 @@ Ghi chú vận hành:
 
 - **Vercel Hobby**: function tối đa 10 giây và cron 1 lần/ngày (`vercel.json`) → `?limit=2` mỗi lần;
   GitHub Actions gọi lặp mỗi 30 phút để bù. GitHub tự tắt scheduled workflow sau 60 ngày repo không commit.
+- Khai báo env trên Vercel: **không** dán kèm dấu nháy kép, bắt buộc đủ `DIRECT_URL` (dù runtime chỉ dùng
+  `DATABASE_URL`), và sửa env xong phải **Redeploy** — checklist đầy đủ ở
+  [docs/DEPLOY.md §6](docs/DEPLOY.md#6-deploy-vercel).
 - Đẩy tag để phát hành agent: `git tag agent-v0.1.0 && git push origin agent-v0.1.0` →
   workflow `build-agent.yml` build `agent.exe` và đính kèm vào Release.
 - Đổi `ADMIN_PASSWORD` trong env rồi redeploy (hiện chưa có UI đổi mật khẩu). Đổi `AUTH_SECRET` sẽ
