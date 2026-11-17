@@ -15,6 +15,7 @@ import psutil
 log = logging.getLogger(__name__)
 
 CREATE_NO_WINDOW = 0x08000000
+DETACHED_PROCESS = 0x00000008
 BATTERY_WEAR_TTL_SEC = 3600
 
 _CACHE: dict[str, Any] = {}
