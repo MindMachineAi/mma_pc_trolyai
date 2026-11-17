@@ -36,7 +36,7 @@ Lưu ý thực tế:
 
 - `apps/web/.env` **phải có cả `DATABASE_URL` và `DIRECT_URL`**, nếu thiếu `prisma validate`
   báo `P1012 Environment variable not found: DIRECT_URL`.
-- `next build` đã tắt bước type-check/lint nội bộ (`apps/web/next.config.mjs`) vì CI và
+- `next build` đã tắt bước type-check/lint nội bộ (`apps/web/next.config.ts`) vì CI và
   `pnpm typecheck` đã đảm nhiệm; đừng bỏ `pnpm typecheck` khỏi quy trình.
 - Trên Windows nếu `pnpm install` liên tục `ECONNRESET`, chạy với
   `$env:NODE_OPTIONS="--dns-result-order=ipv4first"` (ép DNS trả IPv4 trước).
