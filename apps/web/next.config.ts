@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   eslint: { ignoreDuringBuilds: true },
+  // Type-check do `pnpm typecheck` (tsc --noEmit) và CI đảm nhiệm — tắt trong
+  // `next build` để build nhanh hơn (đã xác minh tsc sạch: 0 lỗi).
+  typescript: { ignoreBuildErrors: true },
   experimental: {
     serverActions: { bodySizeLimit: "256kb" },
   },
