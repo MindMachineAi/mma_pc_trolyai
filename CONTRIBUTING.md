@@ -18,6 +18,29 @@ Cảm ơn bạn quan tâm! Repo này là dự án cá nhân nhưng mọi PR/issu
 - Không cho AI sinh lệnh tự do: mọi hành động phải nằm trong allowlist và cần người dùng xác nhận.
 - Giữ tiếng Việt trong UI và thông báo lỗi hướng tới người dùng.
 
+## Kiểm thử cục bộ (đã xác minh trên Windows)
+
+Yêu cầu: **Node 22 LTS** (repo pin `pnpm@9.15.0` qua `packageManager`) và **Python 3.10+**.
+
+```powershell
+pnpm install                       # tải dependency (cần registry.npmjs.org)
+pnpm --filter web prisma:generate  # sinh Prisma Client
+pnpm --filter web prisma:validate   # cần DATABASE_URL + DIRECT_URL trong apps/web/.env
+pnpm typecheck                     # tsc --noEmit — phải 0 lỗi
+pnpm build                         # next build — phải in bảng "Route (app)"
+python -m compileall -q apps/agent # cú pháp Python
+cd apps/agent; python main.py --help
+```
+
+Lưu ý thực tế:
+
+- `apps/web/.env` **phải có cả `DATABASE_URL` và `DIRECT_URL`**, nếu thiếu `prisma validate`
+  báo `P1012 Environment variable not found: DIRECT_URL`.
+- `next build` đã tắt bước type-check/lint nội bộ (`apps/web/next.config.mjs`) vì CI và
+  `pnpm typecheck` đã đảm nhiệm; đừng bỏ `pnpm typecheck` khỏi quy trình.
+- Trên Windows nếu `pnpm install` liên tục `ECONNRESET`, chạy với
+  `$env:NODE_OPTIONS="--dns-result-order=ipv4first"` (ép DNS trả IPv4 trước).
+
 ## Báo lỗi bảo mật
 
 Xem `SECURITY.md` — không mở public issue cho lỗ hổng.

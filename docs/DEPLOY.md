@@ -93,11 +93,21 @@ git remote add origin https://github.com/MindMachineAi/mma_pc_trolyai.git
 git push -u origin main
 ```
 
-> Repo ở thư mục này **đã được `git init` + gắn remote `origin`** sẵn (2 commit đầu đã có),
-> nên bạn chỉ cần chạy `git push -u origin main`.
+> Repo ở thư mục này **đã được `git init` + gắn remote `origin`** sẵn (5 commit đã có,
+> gồm lockfile + bản vá Next 15.2.3), nên bạn chỉ cần chạy `git push -u origin main`.
+>
+> Repo trên GitHub hiện **public và rỗng** (0 nhánh) — `git ls-remote --heads origin`
+> trả về rỗng là bình thường trước lần push đầu.
 
 > Lần push đầu tiên Git Credential Manager sẽ mở trình duyệt để đăng nhập GitHub
 > (cần quyền ghi vào org `MindMachineAi`).
+>
+> Nếu chạy trong shell không tương tác (script/CI/agent) sẽ gặp
+> `fatal: Cannot prompt because user interactivity has been disabled` — hãy chạy
+> `git push -u origin main` trong **Terminal bình thường** (PowerShell / VS Code) để
+> GCM mở trình duyệt đăng nhập. Hoặc dùng PAT:
+> `git remote set-url origin https://<PAT>@github.com/MindMachineAi/mma_pc_trolyai.git`,
+> push xong **nhớ đổi lại URL không chứa PAT**.
 >
 > ⚠️ **Đừng để repo nằm trong thư mục Google Drive / OneDrive đang sync.** Drive tạo
 > `desktop.ini` trong *mọi* thư mục, kể cả `.git\refs\heads\`, sinh ra ref hỏng
