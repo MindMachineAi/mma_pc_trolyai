@@ -56,6 +56,7 @@ export function DeviceManage({
     setBusy(null);
     setError(null);
     setCopied(false);
+    setToken(null);
   }
 
   function open(next: Exclude<Mode, null>) {

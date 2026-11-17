@@ -39,7 +39,7 @@ export type IngestPayload = z.infer<typeof ingestSchema>;
 export type IngestMetrics = IngestPayload["metrics"];
 
 export const createDeviceSchema = z.object({
-  name: z.string().min(2, "Tên thiết bị tối thiểu 2 ký tự").max(60),
+  name: z.string().trim().min(2, "Tên thiết bị tối thiểu 2 ký tự").max(60),
   ownerLabel: z.string().max(60).optional(),
 });
 
