@@ -58,9 +58,44 @@ Phản hồi `201`:
 
 Admin. Danh sách thiết bị + metric mới nhất + điểm sức khỏe + số cảnh báo mở.
 
+## PATCH /api/devices/{id}
+
+Admin. Đổi tên thiết bị / nhãn chủ sở hữu. Token và trạng thái giữ nguyên (agent đang chạy không bị ảnh hưởng).
+
+```json
+{ "name": "Dell phòng kế toán" }
+```
+
+Cần ít nhất một trường; `name` 2–60 ký tự, `ownerLabel` ≤ 60 ký tự — sai trả `422 invalid_payload`.
+
 ## DELETE /api/devices/{id}
 
 Admin. Thu hồi thiết bị: `status = DISABLED`, hủy mọi lệnh đang chờ. Lịch sử được giữ lại.
+
+## DELETE /api/devices/{id}?purge=true
+
+Admin. Xoá **vĩnh viễn** thiết bị cùng metric/event/insight/command (Prisma `onDelete: Cascade`).
+Không khôi phục được — agent còn chạy trên máy sẽ nhận `401 invalid_token`.
+
+## POST /api/devices/{id}/reconnect
+
+Admin. Cấp **token mới** cho thiết bị (token cũ mất hiệu lực ngay), đưa thiết bị về `OFFLINE` và huỷ
+lệnh đang chờ. Dùng khi cài lại Windows, chuyển agent sang máy khác, bật lại thiết bị đã thu hồi,
+hoặc nghi token cũ bị lộ.
+
+Phản hồi `200`:
+
+```json
+{
+  "ok": true,
+  "device": { "id": "clx…", "name": "Dell Inspiron 15" },
+  "token": "pca_9f2c…",
+  "tokenPrefix": "pca_9f2c1234…",
+  "note": "Token mới chỉ hiển thị 1 lần. Agent đang chạy bằng token cũ sẽ bị từ chối (401) — hãy cài lại bằng bộ cài mới."
+}
+```
+
+Dashboard hiện token + nút **Tải bộ cài** ngay sau khi gọi endpoint này.
 
 ---
 

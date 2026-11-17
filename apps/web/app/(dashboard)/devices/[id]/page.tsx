@@ -5,6 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { MetricsChart, type ChartPoint } from "@/components/metrics-chart";
 import { DeviceActions } from "@/components/device-actions";
+import { DeviceManage } from "@/components/device-manage";
 import { HealthGauge, Meter, Panel, StatusDot, ToneBadge } from "@/components/ui";
 import { computeHealth, healthLabel } from "@/lib/health";
 import { formatDateTime, formatDuration, formatGb, formatPct, severityTone, timeAgo, usageTone } from "@/lib/utils";
@@ -126,6 +127,14 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
           <HealthGauge score={healthScore} />
         </div>
       </div>
+
+      <DeviceManage
+        deviceId={device.id}
+        name={device.name}
+        status={device.status}
+        variant="page"
+        redirectOnDelete
+      />
 
       <Panel>
         <div className="flex flex-wrap items-center justify-between gap-2">

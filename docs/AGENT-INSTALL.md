@@ -21,8 +21,13 @@ Lưu ý:
 
 - File `.cmd` chứa token: chỉ chuyển qua kênh tin cậy, và xoá ngay nếu cài lỗi mà không dùng nữa.
 - Cài lỗi thì file `.cmd` **được giữ lại** để chạy lại; xem thông báo đỏ trong cửa sổ console.
-- Nút tải chỉ sinh file cho thiết bị vừa tạo (token chỉ hiện 1 lần). Thiết bị cũ muốn cài lại phải tạo thiết bị mới
-  hoặc dùng cách thủ công ở mục 2 với token đã lưu.
+- Lỗi `Khong tai duoc install.ps1 tu GitHub Release (HTTP 404 …)` = bản phát hành mới nhất chưa đính kèm
+  đủ 4 file. Cách xử lý: cài thủ công theo mục 2 (dùng token đã lưu), hoặc chờ Release mới đủ file (mục 5).
+- Nút tải chỉ sinh file cho thiết bị vừa tạo (token chỉ hiện 1 lần). Thiết bị đã có: bấm **Kết nối lại** trên thẻ
+  thiết bị (hoặc trang chi tiết) → cấp token mới + tải bộ cài mới; agent đang chạy bằng token cũ sẽ bị từ chối
+  (`401`) cho tới khi cài lại.
+- Các nút quản lý trên mỗi thiết bị: **Sửa tên** (chỉ đổi tên hiển thị) · **Kết nối lại** (token mới + bộ cài) ·
+  **Thu hồi** (ngắt kết nối, giữ lịch sử) · **Xoá** (xoá vĩnh viễn thiết bị cùng metric/cảnh báo).
 
 ## 2. Cài thủ công (phương án dự phòng)
 
@@ -103,6 +108,10 @@ pyinstaller --clean --noconfirm build.spec
 
 Hoặc đẩy tag `agent-v0.1.0` lên GitHub → workflow `Build agent (Windows exe)` tự build và
 đính kèm file vào Release.
+
+Release **phải có đủ 4 file** `agent.exe`, `install.ps1`, `uninstall.ps1`, `SHA256SUMS.txt`. Nút
+**Tải bộ cài** tải 3 file `agent.exe`, `install.ps1`, `SHA256SUMS.txt` — thiếu file nào là báo lỗi
+`HTTP 404` kèm tên file đó.
 
 ## 6. Gỡ cài đặt
 
