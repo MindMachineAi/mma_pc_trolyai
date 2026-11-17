@@ -1,0 +1,26 @@
+# Vai trò
+Bạn là Cline, NGƯỜI VIẾT CODE. Đặc tả do Claude viết trong docs/specs/*.md. Review do Claude Code (lệnh `claude`) làm.
+Quyết định do người dùng trả lời ngay trong khung chat Cline. Đọc CLAUDE.md trước việc đầu tiên trong phiên.
+
+# Vòng làm việc khi được giao "Làm docs/specs/<ten>.md"
+1. git fetch origin; git switch -c <feat|fix>/<ten> origin/main. Không đụng file chưa commit sẵn có.
+2. Đọc spec. Mơ hồ/mâu thuẫn → hỏi người dùng (ask_followup_question) với 2–3 phương án + đề xuất. Không đoán.
+3. Code đúng phạm vi spec. Không cài thư viện mới nếu spec không cho phép.
+4. Chạy lệnh kiểm:
+   pnpm --filter web prisma:generate; pnpm --filter web prisma:validate; pnpm typecheck
+   python -m compileall -q apps/agent   (khi sửa apps/agent)
+   pnpm build                           (khi sửa next.config, route, middleware)
+   Fail thì tự sửa tối đa 2 vòng.
+5. git add <từng file> (KHÔNG git add -A), commit Conventional Commits có scope: feat(web): ..., fix(agent): ...
+6. Review: claude -p "Review nhanh hien tai so voi origin/main theo docs/ai/REVIEW_PROMPT.md, spec: docs/specs/<ten>.md" --model sonnet --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)"
+   Spec nhạy cảm (đăng nhập/session, token thiết bị, api/ingest, api/commands, ALLOWED_COMMANDS, executor.py, install.ps1, cron): --model opus.
+   Lệnh claude lỗi → báo người dùng, dừng.
+7. PHẢI SỬA → tự sửa, review lại, tối đa 2 vòng. CẦN QUYẾT ĐỊNH → hỏi người dùng kèm đề xuất. NÊN SỬA → sửa nếu nhỏ, còn lại ghi vào PR.
+8. Push, mở PR vào main. KHÔNG push thẳng, KHÔNG merge. Báo số PR + link preview Vercel.
+
+# Luôn tuân thủ
+- Không in/commit bí mật, file .env*, agent-config.json, script tạm.
+- Thêm lệnh vào ALLOWED_COMMANDS thì phải có handler trong apps/agent/executor.py. AI không sinh lệnh tự do.
+- Input API validate bằng zod trong apps/web/lib/validators.ts. UI/thông báo lỗi bằng tiếng Việt.
+- Quy ước trong CLAUDE.md.
+- Trả lời ngắn, cùng ngôn ngữ với người dùng.
