@@ -76,6 +76,7 @@ Admin. Thu hồi thiết bị: `status = DISABLED`, hủy mọi lệnh đang ch�
 
 Admin. Xoá **vĩnh viễn** thiết bị cùng metric/event/insight/command (Prisma `onDelete: Cascade`).
 Không khôi phục được — agent còn chạy trên máy sẽ nhận `401 invalid_token`.
+Query chỉ nhận `purge=true`/`purge=false` (không truyền = thu hồi); giá trị khác trả `422 invalid_query`.
 
 ## POST /api/devices/{id}/reconnect
 

@@ -54,6 +54,11 @@ export const updateDeviceSchema = z
     path: ["name"],
   });
 
+/** Query của DELETE /api/devices/{id}: `purge=true` là xoá vĩnh viễn, còn lại là thu hồi. */
+export const deleteDeviceQuerySchema = z.object({
+  purge: z.enum(["true", "false"]).optional(),
+});
+
 export const ALLOWED_COMMANDS = [
   "clean_temp",
   "flush_dns",

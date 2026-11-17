@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { updateDeviceSchema } from "@/lib/validators";
+import { deleteDeviceQuerySchema, updateDeviceSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,7 +58,13 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
   }
 
   const { id } = await context.params;
-  const purge = new URL(request.url).searchParams.get("purge") === "true";
+  const query = deleteDeviceQuerySchema.safeParse({
+    purge: new URL(request.url).searchParams.get("purge") ?? undefined,
+  });
+  if (!query.success) {
+    return NextResponse.json({ error: "invalid_query" }, { status: 422 });
+  }
+  const purge = query.data.purge === "true";
 
   const existing = await prisma.device.findUnique({ where: { id }, select: { id: true } });
   if (!existing) {
