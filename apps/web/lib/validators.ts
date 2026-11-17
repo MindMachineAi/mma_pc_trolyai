@@ -43,6 +43,17 @@ export const createDeviceSchema = z.object({
   ownerLabel: z.string().max(60).optional(),
 });
 
+/** Đổi tên / nhãn chủ sở hữu của thiết bị đã có (PATCH /api/devices/{id}). */
+export const updateDeviceSchema = z
+  .object({
+    name: z.string().trim().min(2, "Tên thiết bị tối thiểu 2 ký tự").max(60).optional(),
+    ownerLabel: z.string().trim().max(60).optional(),
+  })
+  .refine((value) => value.name !== undefined || value.ownerLabel !== undefined, {
+    message: "Cần ít nhất một trường để cập nhật",
+    path: ["name"],
+  });
+
 export const ALLOWED_COMMANDS = [
   "clean_temp",
   "flush_dns",
