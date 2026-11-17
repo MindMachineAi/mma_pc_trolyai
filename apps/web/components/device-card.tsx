@@ -95,4 +95,3 @@ export function DeviceCard({ device }: { device: DeviceCardData }) {
     </div>
   );
 }
-

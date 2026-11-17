@@ -15,6 +15,7 @@ function toMessage(error: unknown): string {
   if (code === "unauthenticated") return "Phiên đăng nhập đã hết hạn — đăng nhập lại rồi thử lại.";
   if (code === "not_found") return "Thiết bị không còn tồn tại (có thể đã bị xoá ở tab khác).";
   if (code === "invalid_payload") return "Dữ liệu không hợp lệ — kiểm tra lại tên thiết bị.";
+  if (code === "invalid_query") return "Tham số không hợp lệ — tải lại trang rồi thử lại.";
   return code || "Lỗi không xác định";
 }
 
@@ -52,10 +53,16 @@ export function DeviceManage({
   const revoked = status === "DISABLED";
 
   function close() {
+    // Token chỉ hiện 1 lần: đóng bảng khi chưa lưu thì phải cấp lại từ đầu.
+    const confirmed =
+      !token ||
+      window.confirm("Token mới chỉ hiển thị 1 lần và sẽ mất khi đóng. Bạn đã copy hoặc tải bộ cài chưa?");
+    if (!confirmed) return;
     setMode(null);
     setBusy(null);
     setError(null);
     setCopied(false);
+    setToken(null);
   }
 
   function open(next: Exclude<Mode, null>) {
@@ -173,11 +180,20 @@ export function DeviceManage({
 
   const btn = compact ? "btn-ghost px-2 py-1 text-[11px]" : "btn-ghost";
   const icon = compact ? "h-3.5 w-3.5" : "h-4 w-4";
+  // Đang hiện token mới thì khoá các thao tác khác, tránh mất token mà không cảnh báo.
+  const locked = busy !== null || token !== null;
+  const lockHint = "Đang hiện token mới — copy hoặc tải bộ cài rồi đóng bảng trước";
 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <button type="button" className={btn} onClick={() => open("rename")} title="Đổi tên hiển thị">
+        <button
+          type="button"
+          className={btn}
+          onClick={() => open("rename")}
+          disabled={locked}
+          title={token ? lockHint : "Đổi tên hiển thị"}
+        >
           <Pencil className={icon} aria-hidden />
           Sửa tên
         </button>
@@ -185,7 +201,8 @@ export function DeviceManage({
           type="button"
           className={btn}
           onClick={() => open("reconnect")}
-          title="Cấp token mới và tải lại bộ cài"
+          disabled={locked}
+          title={token ? lockHint : "Cấp token mới và tải lại bộ cài"}
         >
           <Plug className={icon} aria-hidden />
           Kết nối lại
@@ -195,7 +212,8 @@ export function DeviceManage({
             type="button"
             className={btn}
             onClick={() => open("revoke")}
-            title="Ngắt kết nối nhưng giữ lịch sử"
+            disabled={locked}
+            title={token ? lockHint : "Ngắt kết nối nhưng giữ lịch sử"}
           >
             <PowerOff className={icon} aria-hidden />
             Thu hồi
@@ -205,7 +223,8 @@ export function DeviceManage({
           type="button"
           className={cn(btn, "text-rose-300 hover:text-rose-200")}
           onClick={() => open("delete")}
-          title="Xoá vĩnh viễn khỏi hệ thống"
+          disabled={locked}
+          title={token ? lockHint : "Xoá vĩnh viễn khỏi hệ thống"}
         >
           <Trash2 className={icon} aria-hidden />
           Xoá

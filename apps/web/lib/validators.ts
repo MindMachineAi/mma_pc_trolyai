@@ -39,7 +39,7 @@ export type IngestPayload = z.infer<typeof ingestSchema>;
 export type IngestMetrics = IngestPayload["metrics"];
 
 export const createDeviceSchema = z.object({
-  name: z.string().min(2, "Tên thiết bị tối thiểu 2 ký tự").max(60),
+  name: z.string().trim().min(2, "Tên thiết bị tối thiểu 2 ký tự").max(60),
   ownerLabel: z.string().max(60).optional(),
 });
 
@@ -53,6 +53,11 @@ export const updateDeviceSchema = z
     message: "Cần ít nhất một trường để cập nhật",
     path: ["name"],
   });
+
+/** Query của DELETE /api/devices/{id}: `purge=true` là xoá vĩnh viễn, còn lại là thu hồi. */
+export const deleteDeviceQuerySchema = z.object({
+  purge: z.enum(["true", "false"]).optional(),
+});
 
 export const ALLOWED_COMMANDS = [
   "clean_temp",
