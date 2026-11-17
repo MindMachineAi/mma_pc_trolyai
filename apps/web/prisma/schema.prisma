@@ -1,0 +1,144 @@
+// PC Trợ Lý AI — schema dữ liệu
+// Lưu ý: BigInt KHÔNG dùng cho id để tránh lỗi serialize khi render Server Component.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  DISABLED
+}
+
+enum Severity {
+  INFO
+  WARN
+  CRITICAL
+}
+
+enum CommandStatus {
+  PENDING
+  SENT
+  DONE
+  FAILED
+}
+
+enum InsightStatus {
+  OPEN
+  ACKED
+  DONE
+}
+
+model Device {
+  id          String       @id @default(cuid())
+  name        String
+  ownerLabel  String       @default("me")
+  hostname    String?
+  osName      String?
+  cpuModel    String?
+  gpuModel    String?
+  ramGb       Float?
+  tokenHash   String       @unique
+  tokenPrefix String
+  status      DeviceStatus @default(OFFLINE)
+  lastSeenAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  metrics  Metric[]
+  events   Event[]
+  insights Insight[]
+  commands Command[]
+  health   HealthSnapshot[]
+
+  @@index([status, lastSeenAt])
+}
+
+model Metric {
+  id           Int      @id @default(autoincrement())
+  deviceId     String
+  ts           DateTime @default(now())
+  cpuPct       Float
+  memPct       Float
+  diskPct      Float
+  diskFreeGb   Float
+  tempCpu      Float?
+  batteryPct   Float?
+  batteryWear  Float?
+  netUpKbps    Float?
+  netDownKbps  Float?
+  uptimeSec    Int
+  procCount    Int?
+  topProcesses Json?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, ts(sort: Desc)])
+  @@index([ts])
+}
+
+model Event {
+  id         Int       @id @default(autoincrement())
+  deviceId   String
+  createdAt  DateTime  @default(now())
+  severity   Severity  @default(WARN)
+  code       String
+  message    String
+  details    Json?
+  resolvedAt DateTime?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, createdAt(sort: Desc)])
+  @@index([resolvedAt])
+}
+
+model Insight {
+  id              Int           @id @default(autoincrement())
+  deviceId        String
+  ts              DateTime      @default(now())
+  model           String
+  severity        Severity      @default(INFO)
+  summary         String
+  recommendations Json
+  healthScore     Int?
+  status          InsightStatus @default(OPEN)
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, ts(sort: Desc)])
+  @@index([status])
+}
+
+model Command {
+  id          String        @id @default(cuid())
+  deviceId    String
+  type        String
+  params      Json?
+  status      CommandStatus @default(PENDING)
+  result      Json?
+  createdAt   DateTime      @default(now())
+  sentAt      DateTime?
+  completedAt DateTime?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, status])
+}
+
+model HealthSnapshot {
+  id        Int      @id @default(autoincrement())
+  deviceId  String
+  ts        DateTime @default(now())
+  score     Int
+  breakdown Json
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, ts(sort: Desc)])
+}

@@ -1,0 +1,59 @@
+# ============================================================
+# SECRETS — tuyệt đối không commit
+# ============================================================
+.env
+.env.local
+.env.*.local
+.env.production
+*.pem
+*.key
+*.p12
+secrets/
+!*.env.example
+
+# ============================================================
+# Database / dữ liệu runtime
+# ============================================================
+data/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# ============================================================
+# Node / Next.js
+# ============================================================
+node_modules/
+.next/
+out/
+.turbo/
+.vercel/
+next-env.d.ts
+*.tsbuildinfo
+
+# ============================================================
+# Python / Agent
+# ============================================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.spec.bak
+agent-config.json
+*.exe
+
+# ============================================================
+# Tooling / OS
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+coverage/
+logs/
+*.log

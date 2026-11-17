@@ -1,0 +1,21 @@
+{
+  "name": "pctrolyai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PC Trợ Lý AI — dashboard giám sát & bảo trì nhiều laptop (Next.js + Vercel + Neon + DeepSeek)",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "typecheck": "pnpm --filter web typecheck",
+    "db:generate": "pnpm --filter web prisma:generate",
+    "db:push": "pnpm --filter web prisma:push",
+    "db:migrate": "pnpm --filter web prisma:migrate",
+    "gen:secrets": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gen-secrets.ps1"
+  }
+}

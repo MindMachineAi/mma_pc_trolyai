@@ -1,0 +1,31 @@
+name: AI analysis cron
+
+# Vercel Hobby chỉ cho phép cron 1 lần/ngày → GitHub Actions bổ sung nhịp 30 phút.
+# Cần 2 repo secrets: APP_URL, CRON_SECRET (Settings > Secrets and variables > Actions).
+# Lưu ý: GitHub tự tắt scheduled workflow sau 60 ngày repo không có commit.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger /api/cron/analyze
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APP_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "APP_URL hoặc CRON_SECRET chưa cấu hình — bỏ qua lần chạy này."
+            exit 0
+          fi
+          curl -sS --max-time 120 -X POST "${APP_URL%/}/api/cron/analyze?limit=2" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -o response.json -w "HTTP %{http_code}\n"
+          cat response.json

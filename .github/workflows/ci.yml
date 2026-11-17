@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web (typecheck + prisma validate)
+    runs-on: ubuntu-latest
+    env:
+      # Giá trị giả — chỉ để Prisma đọc schema, KHÔNG kết nối DB thật trong CI.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?sslmode=disable"
+      DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci?sslmode=disable"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Prisma generate
+        run: pnpm --filter web prisma:generate
+
+      - name: Prisma validate
+        run: pnpm --filter web prisma:validate
+
+      - name: TypeScript typecheck
+        run: pnpm --filter web typecheck
+
+  agent:
+    name: Agent (compile check)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r apps/agent/requirements.txt
+
+      - name: Byte-compile agent
+        run: python -m compileall -q apps/agent
+
+      - name: Smoke-run CLI help
+        working-directory: apps/agent
+        run: python main.py --help
