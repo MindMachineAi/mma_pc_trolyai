@@ -27,6 +27,26 @@ SYSTEM_INFO_EVERY_CYCLES = 30
 log = logging.getLogger("agent")
 
 
+def _force_utf8_stdio() -> None:
+    """Ép stdout/stderr sang UTF-8.
+
+    Khi agent chạy dưới Scheduled Task hoặc trong CI (stdout bị redirect), Python dùng
+    codepage hệ thống (cp1252 trên runner Windows) → in tiếng Việt sẽ ném
+    UnicodeEncodeError và tiến trình thoát với mã 1, kể cả `--help`.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        # Console thật trên Windows đã dùng wide-char API (PEP 528) — chỉ cần khi bị redirect.
+        if getattr(stream, "isatty", lambda: True)():
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (OSError, ValueError):  # pragma: no cover - phụ thuộc môi trường
+            pass
+
+
 def setup_logging(config: AgentConfig) -> None:
     handlers: list[logging.Handler] = [logging.StreamHandler(sys.stdout)]
     try:
@@ -103,6 +123,7 @@ def run_once(client: AgentClient, send_system: bool) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    _force_utf8_stdio()
     args = parse_args(argv)
     try:
         config = load_config(args)

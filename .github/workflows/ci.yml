@@ -44,6 +44,10 @@ jobs:
   agent:
     name: Agent (compile check)
     runs-on: windows-latest
+    env:
+      # Runner Windows redirect stdout với codepage hệ thống → ép Python dùng UTF-8.
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: "utf-8"
     steps:
       - uses: actions/checkout@v4
 
