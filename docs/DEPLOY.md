@@ -93,8 +93,8 @@ git remote add origin https://github.com/MindMachineAi/mma_pc_trolyai.git
 git push -u origin main
 ```
 
-> Repo ở thư mục này **đã được `git init` + gắn remote `origin`** sẵn (5 commit đã có,
-> gồm lockfile + bản vá Next 15.2.3), nên bạn chỉ cần chạy `git push -u origin main`.
+> Repo ở thư mục này **đã được `git init` + gắn remote `origin`** sẵn (7 commit đã có,
+> gồm lockfile + Next 15.5.29), nên bạn chỉ cần chạy `git push -u origin main`.
 >
 > Repo trên GitHub hiện **public và rỗng** (0 nhánh) — `git ls-remote --heads origin`
 > trả về rỗng là bình thường trước lần push đầu.
