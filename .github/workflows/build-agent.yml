@@ -34,9 +34,30 @@ jobs:
           path: apps/agent/dist/agent.exe
           retention-days: 30
 
+      - name: Build SHA256SUMS.txt
+        shell: pwsh
+        run: |
+          $files = @(
+            @{ Path = 'apps/agent/dist/agent.exe'; Name = 'agent.exe' },
+            @{ Path = 'apps/agent/install.ps1'; Name = 'install.ps1' },
+            @{ Path = 'apps/agent/uninstall.ps1'; Name = 'uninstall.ps1' }
+          )
+          $lines = foreach ($item in $files) {
+            if (-not (Test-Path -LiteralPath $item.Path)) { throw "Khong thay $($item.Path)" }
+            $hash = (Get-FileHash -LiteralPath $item.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($item.Name)"
+          }
+          $content = ($lines -join "`r`n") + "`r`n"
+          [IO.File]::WriteAllText("$PWD/SHA256SUMS.txt", $content, [Text.UTF8Encoding]::new($false))
+          Get-Content -LiteralPath "$PWD/SHA256SUMS.txt" | Write-Host
+
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: apps/agent/dist/agent.exe
+          files: |
+            apps/agent/dist/agent.exe
+            apps/agent/install.ps1
+            apps/agent/uninstall.ps1
+            SHA256SUMS.txt
           generate_release_notes: true
